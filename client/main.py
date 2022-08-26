@@ -200,7 +200,7 @@ if __name__ == '__main__':
     menu.add(0,(300,311),(200,40),'Начать',nun)
 
     # input = pos,size,hide,max,mask
-    menu.add(1,(300,161),(200,40),'Айпи',16,Mask.en+'.1234567890')
+    menu.add(1,(300,161),(200,40),'Айпи',16,Mask.En+'.1234567890:')
     menu.add(1,(300,211),(200,40),'Имя',12,Mask.En+'_1234567890')
     menu.add(1,(300,261),(200,40),'Пароль',16,Mask.en+Mask.n)
     # label = center,text max 70

@@ -22,7 +22,7 @@ from data.data import *
 class Server:
     def __init__(self,port):
         self.socket = Socket()
-        self.socket.bind(('',port))
+        self.socket.bind(('localhost',port))
         self.socket.listen(5)
 
         self.run = True
