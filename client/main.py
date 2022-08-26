@@ -19,7 +19,10 @@ class Online:
         self.app = app
         self.socket = Socket()
         try:
-            self.socket.connect((host,12000))
+            try:
+                self.socket.connect((host.split(":")[0],int(host.split(":")[1])))
+            except:
+                self.socket.connect((host,12000))
             self.send({'name':name,'password':password,'version':self.app.version})
         except Exception as error:
             self.set_label(str(error))
@@ -200,7 +203,7 @@ if __name__ == '__main__':
     menu.add(0,(300,311),(200,40),'Начать',nun)
 
     # input = pos,size,hide,max,mask
-    menu.add(1,(300,161),(200,40),'Айпи',16,Mask.En+'.1234567890:')
+    menu.add(1,(300,161),(200,40),'Айпи',99,Mask.En+'.1234567890:')
     menu.add(1,(300,211),(200,40),'Имя',12,Mask.En+'_1234567890')
     menu.add(1,(300,261),(200,40),'Пароль',16,Mask.en+Mask.n)
     # label = center,text max 70
