@@ -33,7 +33,7 @@ class Online:
 
         self.image = pygame.Surface((16,16))
         self.image.fill([148,59,196])
-        self.localBLockType = 'normal'
+        self.localBLockType = 'pisun'
         self.players = []
         self.blocks = []
 
