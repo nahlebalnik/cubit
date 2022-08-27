@@ -165,37 +165,40 @@ class World:
 
     def update(self):
         while True:
-            for p in self.players:
+            for player in self.players:
                 collision = False
 
-                for o in self.players+self.blocks:
-                    if p != o:
-                        ro = pygame.Rect(o.x,o.y,16,16)
+                if player.y < 495:
+                    player.sy += self.gravity
 
-                        if p.sx != 0:
-                            rp = pygame.Rect(p.x+p.sx,p.y,16,16)
-                            if rp.colliderect(ro):
-                                if p.sx > 0:
-                                    p.sx = (o.x-16)-p.x
+                for other in self.players+self.blocks:
+                    if player != other:
+                        others_rect = pygame.Rect(other.x,other.y,16,16)
+
+                        if player.sx != 0:
+                            players_rect = pygame.Rect(player.x+player.sx,player.y,16,16)
+                            if players_rect.colliderect(others_rect):
+                                if player.x < other.x:
+                                    player.sx = (other.x-16)-player.x
+                                elif player.x > other.x:
+                                    player.sx = player.x-(other.x+16)
+
+                        if player.sy != 0:
+                            players_rect = pygame.Rect(player.x,player.y+player.sy,16,16)
+                            if players_rect.colliderect(others_rect):
+                                if player.sy > 0:
+                                    player.sy = (other.y-16)-player.y
                                 else:
-                                    p.sx = p.x-(o.x+16)
-                                collision = False
-                        if p.sy != 0:
-                            rp = pygame.Rect(p.x,p.y+p.sy,16,16)
-                            if rp.colliderect(ro):
-                                if p.sy > 0:
-                                    p.sy = (o.y-16)-p.y
-                                else:
-                                    p.sy = p.y-(o.y+16)
+                                    player.sy = player.y-(other.y+16)
                                 collision = True
 
-                p.collision = collision
-                if p.y < 496 or (not collision):
-                    p.sy += self.gravity
+                player.collision = collision
 
-                p.y += p.sy
-                p.x += p.sx
-                p.sx = 0
+                player.y += player.sy
+                player.x += player.sx
+                player.sx = 0
+
+                print(player.y,player.sy)
 
             time.sleep(self.server.fps)
 
