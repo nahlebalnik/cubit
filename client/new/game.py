@@ -17,6 +17,7 @@ class player:
         self.pos = [0,0]
         self.speed = [0,0]
         self.collision = False
+        self.mega_jump = False
 
     def x():
         def fget(self):
@@ -416,10 +417,10 @@ class Offline:
                         if self.game.player.sy > 0:
                             self.game.player.sy = (other["pos"][1]-16)-self.game.player.y
                             near = True
+                            collision = True
                         else:
                             self.game.player.sy = self.game.player.y-(other["pos"][1]+16)
                             near = True
-                        collision = True
 
                 if near:
                     if other["type"] == "finish":
@@ -430,14 +431,13 @@ class Offline:
                         self.game.player.x,self.game.player.y = self.start
                         self.game.player.sy,self.game.player.sx = 0,0
                         self.game.player.collision = False
-                    elif other["type"] == "jumper":
-                        self.game.player.sy *= 2
                     elif other["type"] == "speed":
                         self.game.player.sx *= 2
+                    self.game.player.mega_jump = other["type"] == "jumper"
 
             self.game.player.collision = collision
 
-            self.game.player.y += self.game.player.sy
+            self.game.player.y += self.game.player.sy * (2 if self.game.player.mega_jump and self.game.player.sy < 0 else 1)
             self.game.player.x += self.game.player.sx
             self.game.player.sx = 0
     def post_update(self):
@@ -554,10 +554,10 @@ class Preview:
                         if self.game.player.sy > 0:
                             self.game.player.sy = (other["pos"][1]-16)-self.game.player.y
                             near = True
+                            collision = True
                         else:
                             self.game.player.sy = self.game.player.y-(other["pos"][1]+16)
                             near = True
-                        collision = True
 
                 if near:
                     if other["type"] == "finish":
@@ -568,14 +568,13 @@ class Preview:
                         self.game.player.x,self.game.player.y = self.start
                         self.game.player.sy,self.game.player.sx = 0,0
                         self.game.player.collision = False
-                    elif other["type"] == "jumper":
-                        self.game.player.sy *= 2
                     elif other["type"] == "speed":
                         self.game.player.sx *= 2
+                    self.game.player.mega_jump = other["type"] == "jumper"
 
         self.game.player.collision = collision
 
-        self.game.player.y += self.game.player.sy
+        self.game.player.y += self.game.player.sy * (2 if self.game.player.mega_jump and self.game.player.sy < 0 else 1)
         self.game.player.x += self.game.player.sx
         self.game.player.sx = 0
     def event_handle(self,event):

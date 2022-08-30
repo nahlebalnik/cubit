@@ -214,10 +214,10 @@ class World:
                                     if player.sy > 0:
                                         player.sy = (other.y-16)-player.y
                                         near = True
+                                        collision = True
                                     else:
                                         player.sy = player.y-(other.y+16)
                                         near = True
-                                    collision = True
 
                             if near:
                                 if is_block:
@@ -229,14 +229,12 @@ class World:
                                         player.x,player.y = self.world.start
                                         player.sy,player.sx = 0,0
                                         player.collision = False
-                                    elif other.type == "jumper":
-                                        player.sy *= 2
                                     elif other.type == "speed":
                                         player.sx *= 2
+                                    player.mega_jump = other.type == "jumper"
 
                 player.collision = collision
-
-                player.y += player.sy
+                player.y += player.sy*(2 if player.mega_jump and player.sy < 0 else 1)
                 player.x += player.sx
                 player.sx = 0
 
