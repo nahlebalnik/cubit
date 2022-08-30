@@ -3,7 +3,7 @@ from threading import Thread
 from data.data import *
 
 # client -> server {'name':name,'password':password,'version':version}
-# server -> client {'done':None} or {'error':error}
+# server -> client {'done':placeable} or {'error':error}
 # client -> server {'move':{
 #                     'left',
 #                     'right',
@@ -29,7 +29,10 @@ class Server:
         self.users = {}
         self.fps = 1/60
 
-        self.actualVersion = '2.1'
+        self.conf = yaml.load("data/config.yaml")
+        self.editable = self.conf["editable"]
+
+        self.protocol = '2.2'
 
         self.world = World(self,speed=2,gravity=1)
         Thread(target=self.world.update,daemon=True).start()
@@ -84,17 +87,17 @@ class Server:
 
         try:
             player = self.world.create_player(name,password)
-            send({'done':None})
+            send({'editable':self.editable})
         except Exception as e:
             return send_error(e)
 
         log(f'{address} подключился как {name}')
         conn.settimeout(5)
         while True:
-            if(version != self.actualVersion):
+            if(version != self.protocol):
                 break
             try:
-                data = conn.recv(1024)
+                data = conn.recv(1024*4)
                 data = pickle.loads(data)
             except timeout:
                 send_error('Время ожидания вышло')
@@ -116,19 +119,25 @@ class Server:
                         if data['move']['y'] == 'jump':
                             if player.collision or player.y == 496: player.sy = -8
 
-                    if 'block' in data.keys():
-                        if 'delete' in data['block']:
-                            b = block(
-                            data['block']['delete']['pos'],
-                            data['block']['delete']['type'])
-                            if blocknear(player,b):
-                                self.world.pop_block(b)
-                        if 'create' in data['block']:
-                            b = block(
-                            data['block']['create']['pos'],
-                            data['block']['create']['type'])
-                            if blocknear(player,b):
-                                self.world.add_block(b)
+                    if 'respawn' in data:
+                        player.x,player.y = self.world.start
+                        player.sy,player.sx = 0,0
+                        player.collision = False
+
+                    if self.editable:
+                        if 'block' in data.keys():
+                            if 'delete' in data['block']:
+                                b = block(
+                                data['block']['delete']['pos'],
+                                data['block']['delete']['type'])
+                                if blocknear(player,b):
+                                    self.world.pop_block(b)
+                            if 'create' in data['block']:
+                                b = block(
+                                data['block']['create']['pos'],
+                                data['block']['create']['type'])
+                                if blocknear(player,b):
+                                    self.world.add_block(b)
 
                 send({'players':self.world.get_players(),
                       'blocks':self.world.get_blocks()})

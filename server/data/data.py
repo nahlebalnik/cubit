@@ -2,6 +2,8 @@ import pickle
 import shutil
 import pygame
 import time
+from data import map
+import threading
 import os
 
 class yaml:
@@ -47,15 +49,10 @@ class Mask:
 class Player:
     def __init__(self,world,name,password):
         self.dir = 'data/users/'
-        if len(name) > 12:
-            raise Exception('Cлишком длинное имя!')
 
         mask = Mask.En+'_1234567890'
         for s in name:
             if not (s in mask): raise Exception('Имя содержит недопустимые символы')
-
-        if len(password) > 16:
-            raise Exception('Слишком длинный пароль!')
 
         mask = Mask.en+Mask.n
         for s in password:
@@ -67,7 +64,7 @@ class Player:
         else:
             self.data = {
                 'password': password,
-                'pos':[0,0],
+                'pos':world.start,
                 'speed':[0,0]}
             yaml.save(self.data,f'data/users/{name}.yaml')
         if password != self.data['password']:
@@ -133,15 +130,33 @@ class block:
 
     def __dict__(self):
         return {'pos':self.pos,'type':self.type}
+    def __str__(self):
+        return str({'pos':self.pos,'type':self.type})
+    def __repr__(self):
+        return str({'pos':self.pos,'type':self.type})
+
+map.block = block
 
 class World:
     def __init__(self,server,speed,gravity):
         self.server = server
         self.players = []
-        self.blocks = []
+        self.blocks = map.map_load("data/map.cubit")
         self.speed = speed
         self.gravity = gravity
+        self.start = [0,0]
 
+        for b in self.blocks:
+            if b.type == "start":
+                self.start = b.pos
+                break
+
+        threading.Timer(30,self.saving_timer).start()
+    def saving_timer(self):
+        self.save_map()
+        threading.Timer(30,self.saving_timer).start()
+    def save_map(self):
+        map.map_dump(self.blocks,"data/map.cubit")
     def get_blocks(self):
         return [i.__dict__()for i in self.blocks]
     def pop_block(self, block):
@@ -172,33 +187,58 @@ class World:
                     player.sy += self.gravity
 
                 for other in self.players+self.blocks:
-                    if player != other:
-                        others_rect = pygame.Rect(other.x,other.y,16,16)
+                    is_block = type(other) == block
+                    if not is_block or other.type not in ["start","fantom"]:
+                        if player != other:
+                            others_rect = pygame.Rect(other.x,other.y,16,16)
 
-                        if player.sx != 0:
-                            players_rect = pygame.Rect(player.x+player.sx,player.y,16,16)
-                            if players_rect.colliderect(others_rect):
-                                if player.x < other.x:
-                                    player.sx = (other.x-16)-player.x
-                                elif player.x > other.x:
-                                    player.sx = player.x-(other.x+16)
+                            near = False
 
-                        if player.sy != 0:
-                            players_rect = pygame.Rect(player.x,player.y+player.sy,16,16)
-                            if players_rect.colliderect(others_rect):
-                                if player.sy > 0:
-                                    player.sy = (other.y-16)-player.y
-                                else:
-                                    player.sy = player.y-(other.y+16)
-                                collision = True
+                            if player.sx != 0:
+                                players_rect = pygame.Rect(player.x+player.sx,player.y,16,16)
+                                if players_rect.colliderect(others_rect):
+                                    if not is_block:
+                                        other.sx += player.sx/2
+                                    if player.x < other.x:
+                                        player.sx = (other.x-16)-player.x
+                                        near = True
+                                    elif player.x > other.x:
+                                        player.sx = player.x-(other.x+16)
+                                        near = True
+
+                            if player.sy != 0:
+                                players_rect = pygame.Rect(player.x,player.y+player.sy,16,16)
+                                if players_rect.colliderect(others_rect):
+                                    if not is_block:
+                                        other.sy += player.sy/2
+                                    if player.sy > 0:
+                                        player.sy = (other.y-16)-player.y
+                                        near = True
+                                    else:
+                                        player.sy = player.y-(other.y+16)
+                                        near = True
+                                    collision = True
+
+                            if near:
+                                if is_block:
+                                    if other.type == "finish":
+                                        player.x,player.y = self.world.start
+                                        player.sy,player.sx = 0,0
+                                        player.collision = False
+                                    elif other.type == "killer":
+                                        player.x,player.y = self.world.start
+                                        player.sy,player.sx = 0,0
+                                        player.collision = False
+                                    elif other.type == "jumper":
+                                        player.sy *= 2
+                                    elif other.type == "speed":
+                                        player.sx *= 2
 
                 player.collision = collision
 
                 player.y += player.sy
                 player.x += player.sx
                 player.sx = 0
-
-                print(player.y,player.sy)
 
             time.sleep(self.server.fps)
 
@@ -207,29 +247,3 @@ class World:
         for player in self.players:
             pos[player.name] = player.pos
         return pos
-
-# def mkdir(path):
-#     if not os.path.isdir(path):
-#         if os.path.isfile(path):
-#             os.remove(path)
-#         os.mkdir(path)
-
-# mkdir('data')
-# mkdir('data/users')
-
-# a = [10,0]
-# b = {'pos':a}
-# c = [a,[-1,-1]]
-
-# print(b,c)
-
-# import gc
-# def del_links(link):
-#     for i in gc.get_referrers(link):
-#         if type(i) == dict:
-#             i.pop(list(i.keys())[list(i.values()).index(link)])
-#         elif type(i) == list:
-#             i.pop(i.index(link))
-
-# del_links(a)
-# print(b,c)

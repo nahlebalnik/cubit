@@ -1,0 +1,9 @@
+ru = 'абвгдеёжзийклмнопрстуфхцчшщъыьэюя'
+RU = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'
+Ru = ru+RU
+en = 'abcdefghijklmnopqrstuvwxyz'
+EN = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+En = en+EN
+n = '1234567890'
+s = R"_-=`'~!@#$%^&*()+№;%:?><{}[]|\/,."+'"'
+all = Ru+En+n+s
