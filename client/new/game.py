@@ -279,7 +279,7 @@ class Online:
             self.game.player.sy += self.game.gravity
 
         for other in list(self.game.players.items())+self.game.blocks:
-            is_block = other in self.game.blocks()
+            is_block = other in self.game.blocks
             if not is_block: other = {"pos":other[1]}
             if not is_block or other["type"] not in ["start","fantom"]:
                 others_rect = pygwin.rect(other["pos"][0],other["pos"][1],16,16)
