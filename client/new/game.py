@@ -238,7 +238,6 @@ class Online:
                 if 'error' in data:
                     self.showError(data['error'])
         self.close()
-        print("server closed")
     def update(self):
         if not self.isEscape:
             data = {'move': {'x':None,'y':None},'block':{}}
@@ -264,6 +263,52 @@ class Online:
                     data['block'].update({'delete':{
                         'pos':pos,'type':self.localBlockType}})
             self.send(data)
+            self.physics()
+    def physics(self):
+        collision = False
+
+        if self.game.player.y < 495:
+            self.game.player.sy += self.game.gravity
+
+        for other in self.players+self.game.blocks:
+            is_block = other in self.blocks
+            if not is_block or other["type"] not in ["start","fantom"]:
+                if player != other:
+                    others_rect = pygwin.rect(other["pos"][0],other["pos"][1],16,16)
+
+                    near = False
+
+                    if self.game.player.sx != 0:
+                        players_rect = pygwin.rect(self.game.player.x+self.game.player.sx,
+                                                   self.game.player.y,16,16)
+                        if players_rect.collide(others_rect):
+                            if not is_block:
+                                other.sx += self.game.player.sx/2
+                            if self.game.player.x < other["pos"][0]:
+                                self.game.player.sx = (other["pos"][0]-16)-self.game.player.x
+                                near = True
+                            elif self.game.player.x > other["pos"][0]:
+                                self.game.player.sx = self.game.player.x-(other["pos"][0]+16)
+                                near = True
+
+                    if self.game.player.sy != 0:
+                        players_rect = pygwin.rect(self.game.player.x,self.game.player.y+self.game.player.sy,16,16)
+                        if players_rect.collide(others_rect):
+                            if not is_block:
+                                other.sy += self.game.player.sy/2
+                            if self.game.player.sy > 0:
+                                self.game.player.sy = (other["pos"][1]-16)-self.game.player.y
+                                near = True
+                                collision = True
+                            else:
+                                self.game.player.sy = self.game.player.y-(other["pos"][1]+16)
+                                near = True
+
+        self.game.player.collision = collision
+
+        self.game.player.y += self.game.player.sy * (2 if self.game.player.mega_jump and self.game.player.sy < 0 else 1)
+        self.game.player.x += self.game.player.sx
+        self.game.player.sx = 0
     def post_update(self):
         if self.isEscape:
             if self.escape_a > 0:
