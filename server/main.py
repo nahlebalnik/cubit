@@ -1,6 +1,7 @@
 from socket import socket as Socket, timeout
 from threading import Thread
 from data.data import *
+import time
 
 # client -> server {'name':name,'password':password,'version':version}
 # server -> client {'done':placeable} or {'error':error}
@@ -144,6 +145,9 @@ class Server:
                                 data['block']['create']['type'])
                                 if blocknear(player,b):
                                     self.world.add_block(b)
+
+                    if 'ping' in data:
+                        send({'ping':time.time()})
 
                 if not self.editable:
                     send({'players':self.world.get_players()})

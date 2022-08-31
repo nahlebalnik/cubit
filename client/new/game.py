@@ -177,6 +177,9 @@ class Online:
         self.isTab = False
         self.localBlockType = "normal"
 
+        self.last_ping = time.time()
+        self.ping = 0
+
         protocol = "2.2"
 
         try:
@@ -235,12 +238,14 @@ class Online:
                             self.game.delete_block(n['pos'])
                 if 'editable' in data:
                     self.editable = data['editable']
+                if 'ping' in data:
+                    self.ping = data["ping"]-self.last_ping
                 if 'error' in data:
                     self.showError(data['error'])
         self.close()
     def update(self):
         if not self.isEscape:
-            data = {'move': {'x':None,'y':None},'block':{}}
+            data = {'move': {'x':None,'y':None},'block':{},'ping':None}
 
             keys = pygwin.keyboard.gprs()
 
@@ -262,47 +267,40 @@ class Online:
                 if button[0] and (not button[2]):
                     data['block'].update({'delete':{
                         'pos':pos,'type':self.localBlockType}})
+            self.last_ping = time.time()
             self.send(data)
-            self.physics()
+            if round(self.ping) > 500:
+                self.physics()
+        self.game.win.blit(round(self.ping),(0,20))
     def physics(self):
         collision = False
 
         if self.game.player.y < 495:
             self.game.player.sy += self.game.gravity
 
-        for other in self.players+self.game.blocks:
-            is_block = other in self.blocks
+        for other in list(self.game.players.items())+self.game.blocks:
+            is_block = other in self.game.blocks()
+            if not is_block: other = {"pos":other[1]}
             if not is_block or other["type"] not in ["start","fantom"]:
-                if player != other:
-                    others_rect = pygwin.rect(other["pos"][0],other["pos"][1],16,16)
+                others_rect = pygwin.rect(other["pos"][0],other["pos"][1],16,16)
 
-                    near = False
+                if self.game.player.sx != 0:
+                    players_rect = pygwin.rect(self.game.player.x+self.game.player.sx,
+                                               self.game.player.y,16,16)
+                    if players_rect.collide(others_rect):
+                        if self.game.player.x < other["pos"][0]:
+                            self.game.player.sx = (other["pos"][0]-16)-self.game.player.x
+                        elif self.game.player.x > other["pos"][0]:
+                            self.game.player.sx = self.game.player.x-(other["pos"][0]+16)
 
-                    if self.game.player.sx != 0:
-                        players_rect = pygwin.rect(self.game.player.x+self.game.player.sx,
-                                                   self.game.player.y,16,16)
-                        if players_rect.collide(others_rect):
-                            if not is_block:
-                                other.sx += self.game.player.sx/2
-                            if self.game.player.x < other["pos"][0]:
-                                self.game.player.sx = (other["pos"][0]-16)-self.game.player.x
-                                near = True
-                            elif self.game.player.x > other["pos"][0]:
-                                self.game.player.sx = self.game.player.x-(other["pos"][0]+16)
-                                near = True
-
-                    if self.game.player.sy != 0:
-                        players_rect = pygwin.rect(self.game.player.x,self.game.player.y+self.game.player.sy,16,16)
-                        if players_rect.collide(others_rect):
-                            if not is_block:
-                                other.sy += self.game.player.sy/2
-                            if self.game.player.sy > 0:
-                                self.game.player.sy = (other["pos"][1]-16)-self.game.player.y
-                                near = True
-                                collision = True
-                            else:
-                                self.game.player.sy = self.game.player.y-(other["pos"][1]+16)
-                                near = True
+                if self.game.player.sy != 0:
+                    players_rect = pygwin.rect(self.game.player.x,self.game.player.y+self.game.player.sy,16,16)
+                    if players_rect.collide(others_rect):
+                        if self.game.player.sy > 0:
+                            self.game.player.sy = (other["pos"][1]-16)-self.game.player.y
+                            collision = True
+                        else:
+                            self.game.player.sy = self.game.player.y-(other["pos"][1]+16)
 
         self.game.player.collision = collision
 
