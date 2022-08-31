@@ -45,7 +45,7 @@ class Server:
         address = f'{address[0]}:{address[1]}'
         conn.settimeout(1)
 
-        try: data = conn.recv(1024)
+        try: data = conn.recv(1024*40)
         except: return
 
         def close():

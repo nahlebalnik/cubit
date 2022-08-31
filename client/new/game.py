@@ -1,7 +1,7 @@
 from tkinter import messagebox
 from tkinter import filedialog
 from tkinter import Tk
-from socket import socket as Socket
+import socket
 import threading
 import copy
 import pickle
@@ -189,8 +189,10 @@ class Online:
                 ip = host
                 port = 12000
 
-            self.socket = Socket()
+            self.socket = socket.socket()
             self.socket.connect((ip,port))
+            self.socket.setblocking(False)
+            self.socket.settimeout(5)
             self.send({'name':nick,
                        'password':pswd,
                        'version':protocol})
@@ -214,6 +216,8 @@ class Online:
                 break
             except ConnectionResetError:
                 break
+            except socket.timeout:
+                break
             except Exception as e:
                 self.showError(e)
             else:
@@ -234,6 +238,7 @@ class Online:
                 if 'error' in data:
                     self.showError(data['error'])
         self.close()
+        print("server closed")
     def update(self):
         if not self.isEscape:
             data = {'move': {'x':None,'y':None},'block':{}}
@@ -284,8 +289,9 @@ class Online:
     def event_handle(self,event):
         if event.type == pygwin.KEYUP:
             if event.key == pygwin.K_TAB:
-                self.isTab = self.isTab != 1
-                if self.isTab: self.isEscape = False
+                if self.editable:
+                    self.isTab = self.isTab != 1
+                    if self.isTab: self.isEscape = False
             if event.key == pygwin.K_ESCAPE:
                 if self.isTab:
                     self.isTab = False
