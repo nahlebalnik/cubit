@@ -1,1 +1,7 @@
+address: 'localhost'
+port: 12000
+protocol: '2.2'
+
 editable: False
+gravity: 0.8
+speed: 3

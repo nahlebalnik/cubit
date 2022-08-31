@@ -17,7 +17,7 @@ type_indexes = {
 def map_dumps(blocks):
     dict_blocks = {}
     for b in blocks:
-        dict_blocks[f"{b.x}x{b.y}"] = type_indexes[b.type]
+        dict_blocks[f"{b.x//16}x{b.y//16}"] = type_indexes[b.type]
     data = ""
     for x in range(width):
         for y in range(height):
@@ -26,16 +26,16 @@ def map_dumps(blocks):
             else:
                 data += type_indexes["none"]
     data = f"{width}a{height}a{data}"
-    return bz2.compress(data.encode("cp866")).decode("cp866")
+    return bz2.compress(data.encode("windows-1250"))
 
 def map_dump(blocks,filename):
-    file = open(filename,"w",encoding="cp866")
+    file = open(filename,"wb")
     file.write(map_dumps(blocks))
     file.close()
 
 def map_loads(data):
     try:
-        data = bz2.decompress(data.encode("cp866")).decode("cp866")
+        data = bz2.decompress(data).decode("windows-1250")
         data = data.split("a")
         width = int(data[0])
         height = int(data[1])
@@ -45,7 +45,7 @@ def map_loads(data):
         for x in range(width):
             for y in range(height):
                 if data[i] != type_indexes["none"]:
-                    blocks.append(block([x,y],list(type_indexes.keys())[list(type_indexes.values()).index(data[i])]))
+                    blocks.append(block([x*16,y*16],list(type_indexes.keys())[list(type_indexes.values()).index(data[i])]))
                 i += 1
         return blocks
     except Exception as e:
@@ -54,7 +54,7 @@ def map_loads(data):
 
 def map_load(filename):
     try:
-        file = open(filename,"r",encoding="cp866")
+        file = open(filename,"rb")
         content = map_loads(file.read())
         file.close()
         return content
@@ -63,4 +63,4 @@ def map_load(filename):
         return empty_map()
 
 def empty_map():
-    return [block((0,0),"start"),block((784,496),"finish")]
+    return [block([0,0],"start"),block([784,496],"finish")]

@@ -20,21 +20,23 @@ from data.data import *
 # server -> client {'players':{name:[x,y]},'blocks':[{'pos':[x,y],'type':type}]}
 
 class Server:
-    def __init__(self,port):
+    def __init__(self):
+        self.conf = yaml.load("data/config.yaml")
+
         self.socket = Socket()
-        self.socket.bind(('localhost',port))
+        self.socket.bind((self.conf["address"],
+                          self.conf["port"]))
         self.socket.listen(5)
 
         self.run = True
         self.users = {}
         self.fps = 1/60
 
-        self.conf = yaml.load("data/config.yaml")
+
         self.editable = self.conf["editable"]
-
-        self.protocol = '2.2'
-
-        self.world = World(self,speed=2,gravity=1)
+        self.protocol = self.conf["protocol"]
+        self.world = World(self,speed=self.conf["speed"],
+                           gravity=self.conf["gravity"])
         Thread(target=self.world.update,daemon=True).start()
 
         self.accept()
@@ -87,7 +89,11 @@ class Server:
 
         try:
             player = self.world.create_player(name,password)
-            send({'editable':self.editable})
+            if self.editable:
+                send({'editable':self.editable})
+            else:
+                send({'editable':self.editable,
+                      'blocks':map.map_dumps(self.world.blocks)})
         except Exception as e:
             return send_error(e)
 
@@ -97,7 +103,7 @@ class Server:
             if(version != self.protocol):
                 break
             try:
-                data = conn.recv(1024*4)
+                data = conn.recv(1024*40)
                 data = pickle.loads(data)
             except timeout:
                 send_error('Время ожидания вышло')
@@ -120,8 +126,8 @@ class Server:
                             if player.collision or player.y == 496: player.sy = -8
 
                     if 'respawn' in data:
-                        player.x,player.y = self.world.start
-                        player.sy,player.sx = 0,0
+                        player.pos = copy.copy(self.world.start)
+                        player.speed = [0,0]
                         player.collision = False
 
                     if self.editable:
@@ -139,8 +145,11 @@ class Server:
                                 if blocknear(player,b):
                                     self.world.add_block(b)
 
-                send({'players':self.world.get_players(),
-                      'blocks':self.world.get_blocks()})
+                if not self.editable:
+                    send({'players':self.world.get_players()})
+                else:
+                    send({'players':self.world.get_players(),
+                          'blocks':map.map_dumps(self.world.blocks)})
             time.sleep(self.fps)
         self.world.pop_player(player)
         log(f'{name} отключился...')
@@ -151,4 +160,4 @@ class Server:
             Thread(target=self.user,daemon=True,args=(conn,address)).start()
 
 if __name__ == '__main__':
-    Server(12000)
+    Server()

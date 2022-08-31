@@ -5,6 +5,7 @@ import time
 from data import map
 import threading
 import os
+import copy
 
 class yaml:
     from yaml import safe_load as _load
@@ -62,10 +63,7 @@ class Player:
         if f'{name}.yaml' in os.listdir(self.dir):
             self.data = yaml.load(f'{self.dir}{name}.yaml')
         else:
-            self.data = {
-                'password': password,
-                'pos':world.start,
-                'speed':[0,0]}
+            self.data = {'password': password}
             yaml.save(self.data,f'data/users/{name}.yaml')
         if password != self.data['password']:
             raise Exception('Неверный пароль!')
@@ -74,9 +72,10 @@ class Player:
         self.password = password
 
         self.world = world
-        self.pos = self.data['pos']
-        self.speed = self.data['speed']
+        self.pos = copy.copy(world.start)
+        self.speed = [0,0]
         self.collision = False
+        self.mega_jump = False
 
     @property
     def x(self):
@@ -156,7 +155,7 @@ class World:
         self.save_map()
         threading.Timer(30,self.saving_timer).start()
     def save_map(self):
-        map.map_dump(self.blocks,"data/map.cubit")
+        map.map_dump(self.blocks+[block(self.start,"start")],"data/map.cubit")
     def get_blocks(self):
         return [i.__dict__()for i in self.blocks]
     def pop_block(self, block):
@@ -187,7 +186,7 @@ class World:
                     player.sy += self.gravity
 
                 for other in self.players+self.blocks:
-                    is_block = type(other) == block
+                    is_block = other in self.blocks
                     if not is_block or other.type not in ["start","fantom"]:
                         if player != other:
                             others_rect = pygame.Rect(other.x,other.y,16,16)
@@ -222,12 +221,12 @@ class World:
                             if near:
                                 if is_block:
                                     if other.type == "finish":
-                                        player.x,player.y = self.world.start
-                                        player.sy,player.sx = 0,0
+                                        player.pos = copy.copy(self.start)
+                                        player.speed = [0,0]
                                         player.collision = False
                                     elif other.type == "killer":
-                                        player.x,player.y = self.world.start
-                                        player.sy,player.sx = 0,0
+                                        player.pos = copy.copy(self.start)
+                                        player.speed = [0,0]
                                         player.collision = False
                                     elif other.type == "speed":
                                         player.sx *= 2

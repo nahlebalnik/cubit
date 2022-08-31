@@ -78,8 +78,8 @@ class Game:
         self.players = {}
         self.player = player()
         self.online = online
-        self.speed = 2
-        self.gravity = 1
+        self.speed = 3
+        self.gravity = 0.8
         self.blocks_surface = pygwin.surface((800,512))
         self.inventory = {
             "normal":[(200,200,200),"Бетон"],
@@ -98,9 +98,10 @@ class Game:
             self.blocks_surface.draw.rect(self.inventory[b["type"]][0],[*b["pos"],16,16])
 
     def create_block(self,pos,type):
-        delete_block(pos)
+        self.delete_block(pos)
         self.blocks.append({"pos":pos,"type":type})
-        self.blocks_surface.draw.rect(self.inventory[type][0],[*pos,16,16])
+        try:self.blocks_surface.draw.rect(self.inventory[type][0],[*pos,16,16])
+        except:pass
 
     def delete_block(self,pos):
         for i in self.blocks:
@@ -140,6 +141,7 @@ class Game:
             self.win.draw.rect((150,150,150),[*self.player.pos,16,16])
 
             self.module.post_update()
+            self.win.blit(self.win.fps,(0,0))
             self.win.update(60)
 
 class Online:
@@ -206,14 +208,13 @@ class Online:
     def recv(self):
         while True:
             try:
-                data = self.socket.recv(1024*4)
+                data = self.socket.recv(1024*40)
                 data = pickle.loads(data)
-                print(data)
             except ConnectionAbortedError:
                 break
             except ConnectionResetError:
                 break
-            except Exception as error:
+            except Exception as e:
                 self.showError(e)
             else:
                 if 'players' in data:
@@ -221,11 +222,12 @@ class Online:
                     self.game.player.pos = self.game.players.pop(self.nick)
                 if 'blocks' in data:
                     old = copy.copy(self.game.blocks)
-                    for i,o in enumerate(data['blocks']):
+                    new = [i.__dict__() for i in map.map_loads(data['blocks'])]
+                    for i,o in enumerate(new):
                         if o not in old:
-                            self.game.create_block(n['pos'],n['type'])
+                            self.game.create_block(o['pos'],o['type'])
                     for i,n in enumerate(old):
-                        if n not in data['blocks']:
+                        if n not in new:
                             self.game.delete_block(n['pos'])
                 if 'editable' in data:
                     self.editable = data['editable']
