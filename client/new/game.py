@@ -269,8 +269,8 @@ class Online:
                         'pos':pos,'type':self.localBlockType}})
             self.last_ping = time.time()
             self.send(data)
-            if round(self.ping) > 500:
-                self.physics()
+        if round(self.ping) > 500:
+            self.physics()
         self.game.win.blit(round(self.ping),(0,20))
     def physics(self):
         collision = False
@@ -303,10 +303,6 @@ class Online:
                             self.game.player.sy = self.game.player.y-(other["pos"][1]+16)
 
         self.game.player.collision = collision
-
-        self.game.player.y += self.game.player.sy * (2 if self.game.player.mega_jump and self.game.player.sy < 0 else 1)
-        self.game.player.x += self.game.player.sx
-        self.game.player.sx = 0
     def post_update(self):
         if self.isEscape:
             if self.escape_a > 0:
@@ -329,6 +325,10 @@ class Online:
             if self.escape_a < 1000:
                 self.escape_a += (1000-self.escape_a)/10
                 self.draw_escape()
+        m = 1+(60-self.game.win.fps)/60
+        self.game.player.y += self.game.player.sy * (2 if self.game.player.mega_jump and self.game.player.sy < 0 else 1)
+        self.game.player.x += self.game.player.sx * m
+        self.game.player.sx = 0
     def event_handle(self,event):
         if event.type == pygwin.KEYUP:
             if event.key == pygwin.K_TAB:
@@ -487,10 +487,6 @@ class Offline:
                     self.game.player.mega_jump = other["type"] == "jumper"
 
             self.game.player.collision = collision
-
-            self.game.player.y += self.game.player.sy * (2 if self.game.player.mega_jump and self.game.player.sy < 0 else 1)
-            self.game.player.x += self.game.player.sx
-            self.game.player.sx = 0
     def post_update(self):
         if self.isEscape:
             if self.escape_a > 0:
@@ -500,6 +496,10 @@ class Offline:
             if self.escape_a < 1000:
                 self.escape_a += (1000-self.escape_a)/10
                 self.draw_escape()
+            m = 1+(60-self.game.win.fps)/60
+            self.game.player.y += self.game.player.sy * (2 if self.game.player.mega_jump and self.game.player.sy < 0 else 1)
+            self.game.player.x += self.game.player.sx * m
+            self.game.player.sx = 0
     def event_handle(self,event):
         if event.type == pygwin.KEYUP:
             if event.key == pygwin.K_ESCAPE:
@@ -624,10 +624,6 @@ class Preview:
                     self.game.player.mega_jump = other["type"] == "jumper"
 
         self.game.player.collision = collision
-
-        self.game.player.y += self.game.player.sy * (2 if self.game.player.mega_jump and self.game.player.sy < 0 else 1)
-        self.game.player.x += self.game.player.sx
-        self.game.player.sx = 0
     def event_handle(self,event):
         if event.type == pygwin.KEYUP:
             if event.key == pygwin.K_ESCAPE:
@@ -635,7 +631,10 @@ class Preview:
                 editor.main(self.game.blocks+[{"pos":self.start,"type":"start"}])
                 raise SystemExit
     def post_update(self):
-        pass
+        m = 1+(60-self.game.win.fps)/60
+        self.game.player.y += self.game.player.sy * (2 if self.game.player.mega_jump and self.game.player.sy < 0 else 1)
+        self.game.player.x += self.game.player.sx * m
+        self.game.player.sx = 0
 
 if __name__ == '__main__':
     Game(False).start()

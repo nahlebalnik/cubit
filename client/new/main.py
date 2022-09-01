@@ -2,6 +2,7 @@ import pygwin
 import data
 import random
 from gifDrawing import gifDrawer
+from musicManager import musicManager
 import copy
 import os
 import threading
@@ -63,7 +64,7 @@ def main():
               height=75,width=300,fontSize=35,font=data.font,**red),(100,422),0)
 
     base.put(pygwin.ui.button("<",lambda:base.selectPage(0),
-          height=75,width=75,fontSize=35,font=data.font,**red),(20,182),2)
+          height=75,width=75,fontSize=50,font=data.font,**red),(20,182),2)
 
     ip = pygwin.ui.entry("Айпи",
         height=75,width=300,fontSize=35,font=data.font)
@@ -76,7 +77,7 @@ def main():
     base.put(nickname,(100,262),2)
 
     password = pygwin.ui.entry("Пароль",
-       height=75,width=250,fontSize=35,font=data.font)
+       height=75,width=250,fontSize=35,font=data.font,hide=True)
     password.text = data.conf.get()["password"]
     base.put(password,(100,342),2)
 
@@ -89,7 +90,7 @@ def main():
 
 
     base.put(pygwin.ui.button("<",lambda:base.selectPage(0),
-          height=75,width=75,fontSize=35,font=data.font,**red),(20,182),1)
+          height=75,width=75,fontSize=50,font=data.font,**red),(20,182),1)
 
     base.put(pygwin.ui.label("Громкость музыки",font=data.font),(130,275),1)
 
@@ -106,10 +107,7 @@ def main():
     logo_a = 0
     logo_b = False
 
-    music = pygwin.mixer.music(data.join(data.path,"music/"+\
-    random.choice(os.listdir(data.join(data.path,"music")))))
-    music.play()
-    music.volume = (music_volume.get()-6)/94
+    music = musicManager(music_volume.get())
 
     run = True
     while run:
@@ -132,9 +130,7 @@ def main():
 
         win.blit(gif.get_surface(),(100,75))
 
-        password.hide = password.text != ""
-
-        music.volume = (music_volume.get()-6)/94
+        music.volume = music_volume.get()
 
         c = data.conf.get()
         c["volume"] = music_volume.get()
@@ -146,4 +142,5 @@ def main():
 
         win.update(30)
 
-main()
+if __name__ == '__main__':
+    main()
